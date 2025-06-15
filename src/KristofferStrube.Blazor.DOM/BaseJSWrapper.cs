@@ -2,42 +2,43 @@
 using KristofferStrube.Blazor.WebIDL;
 using Microsoft.JSInterop;
 
-namespace KristofferStrube.Blazor.DOM;
-
-/// <summary>
-/// A base class for all wrapper classes from the Blazor.DOM library.
-/// </summary>
-public abstract class BaseJSWrapper : IJSWrapper
+namespace KristofferStrube.Blazor.DOM
 {
     /// <summary>
-    /// A lazily loaded task that provide access to JS helper functions.
+    /// A base class for all wrapper classes from the Blazor.DOM library.
     /// </summary>
-    protected readonly Lazy<Task<IJSObjectReference>> helperTask;
-    /// <inheritdoc/>
-    public IJSObjectReference JSReference { get; }
-    /// <inheritdoc/>
-    public IJSRuntime JSRuntime { get; }
-    /// <inheritdoc/>
-    public bool DisposesJSReference { get; }
-
-    /// <inheritdoc cref="IJSCreatable{T}.CreateAsync(IJSRuntime, IJSObjectReference, CreationOptions)"/>
-    internal BaseJSWrapper(IJSRuntime jSRuntime, IJSObjectReference jSReference, CreationOptions options)
+    public abstract class BaseJSWrapper : IJSWrapper
     {
-        helperTask = new(jSRuntime.GetHelperAsync);
-        JSReference = jSReference;
-        JSRuntime = jSRuntime;
-        DisposesJSReference = options.DisposesJSReference;
-    }
+        /// <summary>
+        /// A lazily loaded task that provide access to JS helper functions.
+        /// </summary>
+        protected readonly Lazy<Task<IJSObjectReference>> helperTask;
+        /// <inheritdoc/>
+        public IJSObjectReference JSReference { get; }
+        /// <inheritdoc/>
+        public IJSRuntime JSRuntime { get; }
+        /// <inheritdoc/>
+        public bool DisposesJSReference { get; }
 
-    /// <inheritdoc/>
-    public async ValueTask DisposeAsync()
-    {
-        if (helperTask.IsValueCreated)
+        /// <inheritdoc cref="IJSCreatable{T}.CreateAsync(IJSRuntime, IJSObjectReference, CreationOptions)"/>
+        internal BaseJSWrapper(IJSRuntime jSRuntime, IJSObjectReference jSReference, CreationOptions options)
         {
-            IJSObjectReference module = await helperTask.Value;
-            await module.DisposeAsync();
+            helperTask = new(jSRuntime.GetHelperAsync);
+            JSReference = jSReference;
+            JSRuntime = jSRuntime;
+            DisposesJSReference = options.DisposesJSReference;
         }
-        await IJSWrapper.DisposeJSReference(this);
-        GC.SuppressFinalize(this);
+
+        /// <inheritdoc/>
+        public async ValueTask DisposeAsync()
+        {
+            if (helperTask.IsValueCreated)
+            {
+                IJSObjectReference module = await helperTask.Value;
+                await module.DisposeAsync();
+            }
+            await IJSWrapper.DisposeJSReference(this);
+            GC.SuppressFinalize(this);
+        }
     }
 }
